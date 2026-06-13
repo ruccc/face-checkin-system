@@ -12,8 +12,8 @@ from typing import Optional, Tuple
 
 # 导入人脸编码器
 import sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from face_service.face_encoder import FaceEncoder
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from services.face_service.face_encoder import FaceEncoder
 
 
 # 全局编码器实例（延迟初始化）
@@ -87,6 +87,7 @@ def search_face(image_path: str, threshold: float = 0.6) -> Optional[Tuple[int, 
     query_vec = query_embedding / np.linalg.norm(query_embedding)
 
     # 从数据库读取所有用户特征进行比对
+    # 导入成员A的数据库模型
     from database import SessionLocal
     from models import FaceFeature
 
