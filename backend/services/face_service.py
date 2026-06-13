@@ -1,69 +1,120 @@
 """
 Face encoding and search service.
 
-This module provides the interface for face detection, encoding, and search.
-Member B should replace the placeholder implementations with actual model calls.
-
-Current placeholder behavior:
-- encode_face: Returns a dummy byte string
-- search_face: Returns None (no match) for all queries
+这个模块提供了人脸检测、编码和检索的接口。
+它调用 backend/services/face_service/ 中的实际模型实现。
 """
 
 import os
+import cv2
+import numpy as np
 from typing import Optional, Tuple
+
+# 导入人脸编码器
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from face_service.face_encoder import FaceEncoder
+
+
+# 全局编码器实例（延迟初始化）
+_encoder = None
+
+
+def _get_encoder() -> FaceEncoder:
+    """获取或创建人脸编码器实例"""
+    global _encoder
+    if _encoder is None:
+        _encoder = FaceEncoder()
+    return _encoder
 
 
 def encode_face(image_path: str) -> Optional[bytes]:
     """
-    Detect face in the image and return its feature encoding as bytes.
+    检测人脸并返回特征编码。
 
     Args:
-        image_path: Path to the uploaded image file.
+        image_path: 上传的图片文件路径。
 
     Returns:
-        Feature vector as bytes, or None if no face detected.
+        特征向量作为bytes，如果未检测到人脸则返回None。
     """
-    # TODO: Implement actual face detection + encoding
-    # Example:
-    #   img = cv2.imread(image_path)
-    #   faces = mtcnn.detect(img)
-    #   if len(faces) == 0: return None
-    #   encoding = facenet.encode(img, faces[0])
-    #   return encoding.tobytes()
     if not os.path.exists(image_path):
         return None
 
-    # Placeholder: return a dummy 512-byte feature vector
-    import struct
-    import hashlib
+    # 读取图片（BGR格式）
+    img = cv2.imread(image_path)
+    if img is None:
+        return None
 
-    # Generate deterministic dummy features based on file content
-    with open(image_path, "rb") as f:
-        data = f.read()
-    h = hashlib.sha256(data).digest()
-    # Repeat to make 512 bytes
-    return h * 16
+    # 使用人脸编码器提取特征
+    encoder = _get_encoder()
+    embedding = encoder.encode(img)
+
+    if embedding is None:
+        return None
+
+    # 转换为bytes返回
+    return embedding.tobytes()
 
 
 def search_face(image_path: str, threshold: float = 0.6) -> Optional[Tuple[int, float]]:
     """
-    Detect face in the image, encode it, and search for the best match
-    in the database.
+    检测人脸、编码并在数据库中搜索匹配项。
 
     Args:
-        image_path: Path to the uploaded checkin photo.
-        threshold: Similarity threshold for accepting a match.
+        image_path: 签到照片的路径。
+        threshold: 相似度阈值，用于接受匹配。
 
     Returns:
-        Tuple of (user_id, confidence) if a match is found, else None.
+        如果找到匹配，返回(user_id, confidence)元组，否则返回None。
     """
-    # TODO: Implement actual face search
-    # Example:
-    #   query_encoding = encode_face(image_path)
-    #   if query_encoding is None: return None
-    #   all_features = db.query(FaceFeature).all()
-    #   best_match = min(..., key=lambda x: cosine_distance(query_encoding, x))
-    #   if best_match.distance < threshold: return (best_match.user_id, 1 - distance)
-    #   return None
-    _ = threshold
-    return None
+    if not os.path.exists(image_path):
+        return None
+
+    # 读取图片
+    img = cv2.imread(image_path)
+    if img is None:
+        return None
+
+    # 提取特征
+    encoder = _get_encoder()
+    query_embedding = encoder.encode(img)
+
+    if query_embedding is None:
+        return None
+
+    # 归一化查询向量
+    query_vec = query_embedding / np.linalg.norm(query_embedding)
+
+    # 从数据库读取所有用户特征进行比对
+    from database import SessionLocal
+    from models import FaceFeature
+
+    db = SessionLocal()
+    try:
+        face_features = db.query(FaceFeature).all()
+
+        best_match_id = None
+        best_similarity = -1
+
+        for face_feature in face_features:
+            # 从bytes转换为numpy数组
+            stored_embedding = np.frombuffer(face_feature.feature_vector, dtype=np.float32)
+            # 归一化存储的向量
+            stored_vec = stored_embedding / np.linalg.norm(stored_embedding)
+
+            # 计算余弦相似度
+            similarity = np.dot(query_vec, stored_vec)
+
+            if similarity > best_similarity:
+                best_similarity = similarity
+                best_match_id = face_feature.user_id
+
+        # 检查是否超过阈值
+        if best_match_id is not None and best_similarity >= threshold:
+            return (best_match_id, float(best_similarity))
+
+        return None
+
+    finally:
+        db.close()
