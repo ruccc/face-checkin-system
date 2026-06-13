@@ -1,0 +1,53 @@
+# IDE 配置
+.idea/
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# 本地文档（不需要上传）
+任务描述.md
+团队分工建议.md
+总要求.md
+
+# 数据库文件（可能包含敏感数据）
+*.db
+*.sqlite
+*.sqlite3
+
+# 上传的文件
+uploads/
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 日志文件
+*.log
+logs/
+
+# 编译文件
+*.class
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+
+# macOS
+.DS_Store
+
+# 测试覆盖率
+htmlcov/
+.coverage
+.coverage.*
