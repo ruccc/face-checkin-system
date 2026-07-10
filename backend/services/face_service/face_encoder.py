@@ -4,7 +4,7 @@
 import numpy as np
 from typing import List, Optional
 from insightface.app import FaceAnalysis
-from config import MODEL_NAME, DEVICE
+from .config import MODEL_NAME, DEVICE
 
 
 class FaceEncoder:

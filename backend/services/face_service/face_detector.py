@@ -4,7 +4,7 @@
 import numpy as np
 from typing import List, Tuple, Optional
 from insightface.app import FaceAnalysis
-from config import MODEL_NAME, DEVICE, MIN_FACE_SIZE, DETECTION_THRESHOLD
+from .config import MODEL_NAME, DEVICE, MIN_FACE_SIZE, DETECTION_THRESHOLD
 
 
 class FaceDetector:
