@@ -5,6 +5,7 @@
 
 ## 技术栈
 - 后端框架：FastAPI
+- 前端框架：Flutter
 - 数据库：SQLite (SQLAlchemy ORM)
 - 认证：JWT Token
 - 部署：华为云 ECS
@@ -68,9 +69,38 @@
 
 ## 本地启动
 
+### 环境要求
+- Python 3.8+
+- Flutter SDK 3.1+
+
+### 启动后端
+
 ```bash
 cd backend
 pip install -r requirements.txt
+# Linux/Mac
 export SECRET_KEY=your-secret-key
+# Windows
+set SECRET_KEY=your-secret-key
+
 python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+### 启动前端
+
+```bash
+cd frontend
+flutter pub get
+flutter run
+```
+
+运行 `flutter run` 后会列出可用设备，输入对应编号即可启动应用：
+
+| 设备 | 说明 |
+|------|------|
+| Windows (desktop) | Windows 桌面应用 |
+| Edge (web) | 浏览器运行 |
+| Chrome (web) | 浏览器运行 |
+| Android | 需连接 Android 手机或模拟器 |
+
+> **注意**：如果提示平台不支持，先运行 `flutter create --platforms=windows,web .` 生成对应平台文件。前端默认连接远程服务器 `115.120.192.191:8000`，无需本地启动后端。
