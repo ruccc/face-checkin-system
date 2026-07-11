@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
@@ -25,7 +25,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final _emailController = TextEditingController();
 
   // 状态
-  File? _selectedPhoto;
+  XFile? _selectedPhoto;
+  Uint8List? _selectedPhotoBytes;
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -51,8 +52,10 @@ class _RegisterPageState extends State<RegisterPage> {
         maxHeight: 1024,
       );
       if (picked != null) {
+        final bytes = await picked.readAsBytes();
         setState(() {
-          _selectedPhoto = File(picked.path);
+          _selectedPhoto = picked;
+          _selectedPhotoBytes = bytes;
         });
       }
     } catch (e) {
@@ -113,6 +116,7 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isLoading = true);
 
     try {
+      print('🔵 开始发送注册请求...');
       await _apiService.register(
         username: _usernameController.text.trim(),
         password: _passwordController.text,
@@ -131,8 +135,10 @@ class _RegisterPageState extends State<RegisterPage> {
       // 返回登录页
       Navigator.pop(context, true);
     } on ApiException catch (e) {
+      print('🔴 ApiException: ${e.message}');
       _showSnackBar(e.message, isError: true);
     } catch (e) {
+      print('🔴 异常: $e');
       _showSnackBar('网络错误，请检查服务器连接', isError: true);
     } finally {
       if (mounted) {
@@ -437,14 +443,14 @@ class _RegisterPageState extends State<RegisterPage> {
             style: BorderStyle.solid,
           ),
         ),
-        child: _selectedPhoto != null
+        child: _selectedPhotoBytes != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(11),
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.file(
-                      _selectedPhoto!,
+                    Image.memory(
+                      _selectedPhotoBytes!,
                       fit: BoxFit.cover,
                     ),
                     // 重新选择按钮

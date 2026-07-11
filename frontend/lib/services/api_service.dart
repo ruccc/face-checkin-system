@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 
@@ -60,12 +60,13 @@ class ApiService {
   Future<http.StreamedResponse> multipartPost(
     String path,
     Map<String, String> fields,
-    File? file,
+    XFile? file,
     String fileFieldName, {
     bool auth = false,
   }) async {
     final headers = await _headers(auth: auth);
     final url = Uri.parse(ApiConfig.apiUrl(path));
+    print('🔵 multipartPost: $url');
 
     final request = http.MultipartRequest('POST', url);
     request.headers.addAll(headers);
@@ -75,10 +76,20 @@ class ApiService {
 
     // 添加文件
     if (file != null) {
-      request.files.add(await http.MultipartFile.fromPath(fileFieldName, file.path));
+      print('🔵 读取文件: ${file.name}');
+      final bytes = await file.readAsBytes();
+      print('🔵 文件大小: ${bytes.length} bytes');
+      request.files.add(http.MultipartFile.fromBytes(
+        fileFieldName,
+        bytes,
+        filename: file.name,
+      ));
     }
 
-    return await request.send();
+    print('🔵 发送请求中...');
+    final response = await request.send();
+    print('🔵 响应状态码: ${response.statusCode}');
+    return response;
   }
 
   // ==================== 注册接口 ====================
@@ -91,7 +102,7 @@ class ApiService {
     required String name,
     required String studentId,
     String? email,
-    required File photo,
+    required XFile photo,
   }) async {
     final response = await multipartPost(
       '/register',

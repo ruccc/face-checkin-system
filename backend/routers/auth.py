@@ -35,7 +35,16 @@ async def register(
     with open(photo_path, "wb") as f:
         f.write(await photo.read())
 
-    # Create user
+    # 先进行人脸编码，失败则不创建用户
+    from services.face_service import encode_face
+    feature_bytes = encode_face(photo_path)
+    if not feature_bytes:
+        # 人脸编码失败，删除已上传的照片
+        if os.path.exists(photo_path):
+            os.remove(photo_path)
+        raise HTTPException(status_code=400, detail="Face encoding failed: no face detected or model error")
+
+    # 人脸编码成功后才创建用户
     user = User(
         username=username,
         password_hash=hash_password(password),
@@ -47,15 +56,9 @@ async def register(
     db.commit()
     db.refresh(user)
 
-    # TODO: Call member B's face encoding service to extract features from photo
-    # and store in face_features table
-    # For now, store a placeholder
-    from services.face_service import encode_face
-    feature_bytes = encode_face(photo_path)
-    if feature_bytes:
-        face_feature = FaceFeature(user_id=user.id, feature_vector=feature_bytes)
-        db.add(face_feature)
-        db.commit()
+    face_feature = FaceFeature(user_id=user.id, feature_vector=feature_bytes)
+    db.add(face_feature)
+    db.commit()
 
     return {"message": "Registration successful"}
 

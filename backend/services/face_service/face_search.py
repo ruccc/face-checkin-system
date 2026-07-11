@@ -6,7 +6,7 @@ import os
 import numpy as np
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from config import FEATURE_DB_PATH, SIMILARITY_THRESHOLD
+from .config import FEATURE_DB_PATH, SIMILARITY_THRESHOLD
 
 
 class FaceSearcher:

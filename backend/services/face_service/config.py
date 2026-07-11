@@ -31,6 +31,7 @@ DETECTION_THRESHOLD = 0.5  # 检测阈值
 # ==================== 人脸识别配置 ====================
 SIMILARITY_THRESHOLD = 0.6  # 人脸相似度阈值，超过此值认为是同一人
 QUALITY_THRESHOLD = 0.5  # 人脸质量分数阈值
+FEATURE_DB_PATH = os.path.join(os.path.dirname(__file__), "data", "face_features.json")  # 人脸特征库路径
 
 # ==================== 文件上传配置 ====================
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
