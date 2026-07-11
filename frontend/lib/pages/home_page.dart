@@ -390,6 +390,24 @@ class _HomePageState extends State<HomePage> {
     final photoId = photo['id'] as int;
     final hasFeature = photo['has_face_feature'] as String? ?? '0';
     final createdAt = photo['created_at'] as String? ?? '';
+    final photoType = photo['photo_type'] as String? ?? 'upload';
+
+    // 照片类型标签
+    String typeLabel;
+    Color typeColor;
+    switch (photoType) {
+      case 'register':
+        typeLabel = '注册照';
+        typeColor = const Color(0xFF4A90D9);
+        break;
+      case 'checkin':
+        typeLabel = '签到照';
+        typeColor = const Color(0xFF66BB6A);
+        break;
+      default:
+        typeLabel = '上传';
+        typeColor = const Color(0xFFFFA726);
+    }
 
     return GestureDetector(
       onTap: () => _showPhotoDetail(photoId),
@@ -409,9 +427,33 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: _buildPhotoImage(photoId),
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    child: _buildPhotoImage(photoId),
+                  ),
+                  // 照片类型标签
+                  Positioned(
+                    top: 4,
+                    left: 4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: typeColor.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        typeLabel,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Padding(

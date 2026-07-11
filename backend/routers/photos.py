@@ -1,12 +1,12 @@
 import os
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List
 from database import get_db
-from models import User, UserPhoto, FaceFeature
-from schemas import UserPhotoResponse, MessageResponse
+from models import User, Photo, FaceFeature
+from schemas import PhotoResponse, MessageResponse
 from auth import get_current_user
 
 router = APIRouter(prefix="/api/photos", tags=["照片库"])
@@ -41,27 +41,28 @@ async def upload_photo(
         # 人脸编码失败不影响照片存储，仅标记为无特征
         pass
 
-    user_photo = UserPhoto(
+    photo_record = Photo(
         user_id=current_user.id,
         photo_path=photo_path,
+        photo_type="upload",
         has_face_feature=has_feature,
     )
-    db.add(user_photo)
+    db.add(photo_record)
     db.commit()
 
     return {"message": f"Photo uploaded successfully{' with face feature' if has_feature == '1' else ''}"}
 
 
-@router.get("", response_model=List[UserPhotoResponse])
+@router.get("", response_model=List[PhotoResponse])
 def list_photos(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """获取当前用户的照片列表"""
+    """获取当前用户的照片列表（所有类型的照片）"""
     photos = (
-        db.query(UserPhoto)
-        .filter(UserPhoto.user_id == current_user.id)
-        .order_by(UserPhoto.created_at.desc())
+        db.query(Photo)
+        .filter(Photo.user_id == current_user.id)
+        .order_by(Photo.created_at.desc())
         .all()
     )
     return photos
@@ -74,9 +75,9 @@ def get_photo_file(
     db: Session = Depends(get_db),
 ):
     """获取照片文件（用于前端预览）"""
-    photo = db.query(UserPhoto).filter(
-        UserPhoto.id == photo_id,
-        UserPhoto.user_id == current_user.id,
+    photo = db.query(Photo).filter(
+        Photo.id == photo_id,
+        Photo.user_id == current_user.id,
     ).first()
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
@@ -92,9 +93,9 @@ def delete_photo(
     db: Session = Depends(get_db),
 ):
     """删除照片（同时删除文件和对应的 FaceFeature）"""
-    photo = db.query(UserPhoto).filter(
-        UserPhoto.id == photo_id,
-        UserPhoto.user_id == current_user.id,
+    photo = db.query(Photo).filter(
+        Photo.id == photo_id,
+        Photo.user_id == current_user.id,
     ).first()
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")

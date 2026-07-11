@@ -34,6 +34,20 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
+class PhotoResponse(BaseModel):
+    id: int
+    user_id: Optional[int] = None
+    photo_path: str
+    photo_type: str
+    has_face_feature: str
+    confidence: Optional[float] = None
+    status: Optional[str] = None
+    created_at: datetime.datetime
+
+    class Config:
+        from_attributes = True
+
+
 class CheckinRecordResponse(BaseModel):
     id: int
     user_id: Optional[int] = None
@@ -42,17 +56,6 @@ class CheckinRecordResponse(BaseModel):
     checkin_time: datetime.datetime
     confidence: Optional[float] = None
     status: str
-
-    class Config:
-        from_attributes = True
-
-
-class UserPhotoResponse(BaseModel):
-    id: int
-    user_id: int
-    photo_path: str
-    has_face_feature: str
-    created_at: datetime.datetime
 
     class Config:
         from_attributes = True

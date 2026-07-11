@@ -3,7 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from sqlalchemy.orm import Session
 from database import get_db
-from models import User, FaceFeature
+from models import User, FaceFeature, Photo
 from schemas import RegisterRequest, LoginRequest, TokenResponse, MessageResponse
 from auth import hash_password, verify_password, create_access_token, get_current_user
 
@@ -56,8 +56,18 @@ async def register(
     db.commit()
     db.refresh(user)
 
+    # 保存人脸特征
     face_feature = FaceFeature(user_id=user.id, feature_vector=feature_bytes)
     db.add(face_feature)
+
+    # 将注册照片存入统一照片库
+    register_photo = Photo(
+        user_id=user.id,
+        photo_path=photo_path,
+        photo_type="register",
+        has_face_feature="1",
+    )
+    db.add(register_photo)
     db.commit()
 
     return {"message": "Registration successful"}

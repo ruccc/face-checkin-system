@@ -16,8 +16,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     face_features = relationship("FaceFeature", back_populates="user", cascade="all, delete-orphan")
-    checkin_records = relationship("CheckinRecord", back_populates="user", cascade="all, delete-orphan")
-    photos = relationship("UserPhoto", back_populates="user", cascade="all, delete-orphan")
+    photos = relationship("Photo", back_populates="user", cascade="all, delete-orphan")
 
 
 class FaceFeature(Base):
@@ -31,27 +30,18 @@ class FaceFeature(Base):
     user = relationship("User", back_populates="face_features")
 
 
-class CheckinRecord(Base):
-    __tablename__ = "checkin_records"
+class Photo(Base):
+    """统一照片表 - 包含注册照、签到照、手动上传的照片"""
+    __tablename__ = "photos"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    checkin_time = Column(DateTime, default=datetime.datetime.utcnow)
-    photo_path = Column(String(256))
-    confidence = Column(Float, nullable=True)
-    status = Column(String(20), default="success")
-
-    user = relationship("User", back_populates="checkin_records")
-
-
-class UserPhoto(Base):
-    """用户照片库 - 支持每位用户存储多张照片"""
-    __tablename__ = "user_photos"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # 签到失败时可为 NULL
     photo_path = Column(String(256), nullable=False)
-    has_face_feature = Column(String(1), default="0")  # 是否已提取人脸特征: 0/1
+    photo_type = Column(String(20), default="upload")  # register / checkin / upload
+    has_face_feature = Column(String(1), default="0")   # 是否已提取人脸特征: 0/1
+    # 签到相关字段（仅 photo_type=checkin 时有值）
+    confidence = Column(Float, nullable=True)
+    status = Column(String(20), nullable=True)           # success / failed
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user = relationship("User", back_populates="photos")
