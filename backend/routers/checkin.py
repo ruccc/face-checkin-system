@@ -47,7 +47,7 @@ async def checkin(photo: UploadFile = File(...), db: Session = Depends(get_db)):
         user_id=user_id,
         photo_path=photo_path,
         photo_type="checkin",
-        has_face_feature="0",
+        has_face_feature="1",
         status="success",
         confidence=confidence,
     )
