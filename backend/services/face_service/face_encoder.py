@@ -95,27 +95,3 @@ def get_encoder() -> FaceEncoder:
     if _encoder is None:
         _encoder = FaceEncoder()
     return _encoder
-
-
-def encode_face(image_path: str):
-    """
-    读取图片文件并提取人脸特征
-
-    Args:
-        image_path: 图片文件路径
-
-    Returns:
-        人脸特征向量的bytes，如果失败则返回None
-    """
-    import cv2
-
-    img = cv2.imread(image_path)
-    if img is None:
-        return None
-
-    encoder = get_encoder()
-    embedding = encoder.encode(img)
-    if embedding is None:
-        return None
-
-    return embedding.tobytes()
