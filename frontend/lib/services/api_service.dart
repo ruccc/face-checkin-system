@@ -150,6 +150,31 @@ class ApiService {
     return data;
   }
 
+  // ==================== 签到接口 ====================
+
+  /// 人脸签到（无需登录，拍照上传后后端自动比对）
+  /// 返回: { "message": "..." }
+  Future<Map<String, dynamic>> checkin({
+    required XFile photo,
+  }) async {
+    final response = await multipartPost(
+      '/checkin',
+      {},
+      photo,
+      'photo',
+      auth: false,
+    );
+
+    final body = await response.stream.bytesToString();
+    final data = jsonDecode(body) as Map<String, dynamic>;
+
+    if (response.statusCode != 200) {
+      throw ApiException(data['detail'] ?? 'Checkin failed');
+    }
+
+    return data;
+  }
+
   // ==================== 注销接口 ====================
 
   /// 用户注销

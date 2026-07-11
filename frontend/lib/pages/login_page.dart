@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'register_page.dart';
+import 'checkin_page.dart';
 
 /// 登录页面
 class LoginPage extends StatefulWidget {
@@ -77,6 +78,13 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void _goToCheckin() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CheckinPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -98,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF4A90D9).withOpacity(0.3),
+                      color: const Color(0xFF4A90D9).withValues(alpha: 0.3),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -231,6 +239,27 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // 无需登录直接签到入口
+              SizedBox(
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: _goToCheckin,
+                  icon: const Icon(Icons.camera_alt_outlined, size: 20),
+                  label: const Text(
+                    '无需登录，直接签到',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF4A90D9),
+                    side: const BorderSide(color: Color(0xFF4A90D9), width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),

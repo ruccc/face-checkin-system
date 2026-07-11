@@ -22,8 +22,6 @@ async def checkin(photo: UploadFile = File(...), db: Session = Depends(get_db)):
     with open(photo_path, "wb") as f:
         f.write(await photo.read())
 
-    # TODO: Call member B's face search service to match the photo against the database
-    # For now, simulate a failed checkin (no match found)
     from services.face_service import search_face
     result = search_face(photo_path)
 

@@ -1,8 +1,14 @@
 """
-人脸识别服务初始化
+人脸识别服务 - 业务封装层
+提供 encode_face 和 search_face 供路由层调用
 """
+import os
+import cv2
+import numpy as np
+from typing import Optional, Tuple
+
+from .face_encoder import FaceEncoder, get_encoder
 from .face_detector import FaceDetector, get_detector
-from .face_encoder import FaceEncoder, get_encoder, encode_face
 from .face_search import FaceSearcher, get_searcher
 
 __all__ = [
@@ -11,5 +17,99 @@ __all__ = [
     'FaceSearcher',
     'get_detector',
     'get_encoder',
-    'get_searcher'
+    'get_searcher',
+    'encode_face',
+    'search_face',
 ]
+
+
+# 全局编码器实例（延迟初始化）
+_encoder = None
+
+
+def _get_encoder() -> FaceEncoder:
+    """获取或创建人脸编码器实例"""
+    global _encoder
+    if _encoder is None:
+        _encoder = FaceEncoder()
+    return _encoder
+
+
+def encode_face(image_path: str) -> Optional[bytes]:
+    """
+    检测人脸并返回特征编码。
+
+    Args:
+        image_path: 上传的图片文件路径。
+
+    Returns:
+        特征向量作为bytes，如果未检测到人脸则返回None。
+    """
+    if not os.path.exists(image_path):
+        return None
+
+    img = cv2.imread(image_path)
+    if img is None:
+        return None
+
+    encoder = _get_encoder()
+    embedding = encoder.encode(img)
+
+    if embedding is None:
+        return None
+
+    return embedding.tobytes()
+
+
+def search_face(image_path: str, threshold: float = 0.6) -> Optional[Tuple[int, float]]:
+    """
+    检测人脸、编码并在数据库中搜索匹配项。
+
+    Args:
+        image_path: 签到照片的路径。
+        threshold: 相似度阈值，用于接受匹配。
+
+    Returns:
+        如果找到匹配，返回(user_id, confidence)元组，否则返回None。
+    """
+    if not os.path.exists(image_path):
+        return None
+
+    img = cv2.imread(image_path)
+    if img is None:
+        return None
+
+    encoder = _get_encoder()
+    query_embedding = encoder.encode(img)
+
+    if query_embedding is None:
+        return None
+
+    query_vec = query_embedding / np.linalg.norm(query_embedding)
+
+    from database import SessionLocal
+    from models import FaceFeature
+
+    db = SessionLocal()
+    try:
+        face_features = db.query(FaceFeature).all()
+
+        best_match_id = None
+        best_similarity = -1
+
+        for face_feature in face_features:
+            stored_embedding = np.frombuffer(face_feature.feature_vector, dtype=np.float32)
+            stored_vec = stored_embedding / np.linalg.norm(stored_embedding)
+            similarity = np.dot(query_vec, stored_vec)
+
+            if similarity > best_similarity:
+                best_similarity = similarity
+                best_match_id = face_feature.user_id
+
+        if best_match_id is not None and best_similarity >= threshold:
+            return (best_match_id, float(best_similarity))
+
+        return None
+
+    finally:
+        db.close()
