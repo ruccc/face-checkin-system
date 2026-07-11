@@ -270,13 +270,27 @@ class ApiService {
 
   // ==================== 注销接口 ====================
 
-  /// 用户注销
+  /// 用户退出登录
   Future<void> logout() async {
     try {
       await post('/logout', {}, auth: true);
     } finally {
       await clearToken();
     }
+  }
+
+  /// 注销账号（删除账号及所有关联数据）
+  Future<void> deleteAccount() async {
+    final headers = await _headers(auth: true);
+    final url = Uri.parse(ApiConfig.apiUrl('/users/me'));
+    final response = await http.delete(url, headers: headers);
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw ApiException(data['detail'] ?? 'Delete account failed');
+    }
+
+    await clearToken();
   }
 }
 

@@ -137,6 +137,43 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _deleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('注销账号'),
+        content: const Text(
+          '此操作不可撤销！\n\n确定要注销账号并清空所有数据吗？\n包括：个人照片、签到记录、人脸数据。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('确认注销'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await _apiService.deleteAccount();
+      if (mounted) {
+        _showSnackBar('账号已注销', isError: false);
+        Navigator.of(context).pushReplacementNamed('/login');
+      }
+    } on ApiException catch (e) {
+      _showSnackBar(e.message, isError: true);
+    } catch (e) {
+      _showSnackBar('注销失败，请重试', isError: true);
+    }
+  }
+
   void _goToCheckin() {
     Navigator.push(
       context,
@@ -168,10 +205,38 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: const Color(0xFF4A90D9),
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: '退出登录',
-            onPressed: _logout,
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            tooltip: '更多选项',
+            onSelected: (value) {
+              if (value == 'logout') {
+                _logout();
+              } else if (value == 'deleteAccount') {
+                _deleteAccount();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: Colors.black54, size: 20),
+                    SizedBox(width: 12),
+                    Text('退出登录'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'deleteAccount',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_forever, color: Colors.red, size: 20),
+                    SizedBox(width: 12),
+                    Text('注销账号', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
