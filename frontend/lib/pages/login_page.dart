@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'register_page.dart';
 import 'checkin_page.dart';
+import 'home_page.dart';
 
 /// 登录页面
 class LoginPage extends StatefulWidget {
@@ -42,7 +43,11 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       _showSnackBar('登录成功！', isError: false);
 
-      // TODO: 跳转到首页/签到页
+      // 跳转到主页
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
     } on ApiException catch (e) {
       _showSnackBar(e.message, isError: true);
     } catch (e) {

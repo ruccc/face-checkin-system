@@ -20,7 +20,10 @@ class FaceCheckinApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
-      home: const LoginPage(),
+      initialRoute: '/login',
+      routes: {
+        '/login': (_) => const LoginPage(),
+      },
     );
   }
 }

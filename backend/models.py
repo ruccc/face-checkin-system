@@ -17,6 +17,7 @@ class User(Base):
 
     face_features = relationship("FaceFeature", back_populates="user", cascade="all, delete-orphan")
     checkin_records = relationship("CheckinRecord", back_populates="user", cascade="all, delete-orphan")
+    photos = relationship("UserPhoto", back_populates="user", cascade="all, delete-orphan")
 
 
 class FaceFeature(Base):
@@ -41,3 +42,16 @@ class CheckinRecord(Base):
     status = Column(String(20), default="success")
 
     user = relationship("User", back_populates="checkin_records")
+
+
+class UserPhoto(Base):
+    """用户照片库 - 支持每位用户存储多张照片"""
+    __tablename__ = "user_photos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    photo_path = Column(String(256), nullable=False)
+    has_face_feature = Column(String(1), default="0")  # 是否已提取人脸特征: 0/1
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    user = relationship("User", back_populates="photos")

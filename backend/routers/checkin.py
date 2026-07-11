@@ -56,8 +56,10 @@ def get_records(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """查询当前用户的签到记录"""
     records = (
         db.query(CheckinRecord)
+        .filter(CheckinRecord.user_id == current_user.id)
         .order_by(CheckinRecord.checkin_time.desc())
         .offset(skip)
         .limit(limit)

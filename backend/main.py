@@ -3,7 +3,8 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db
-from routers import auth, checkin, users
+from routers import auth, checkin, users, photos
+import models  # ensure all models are imported before init_db
 
 app = FastAPI(
     title="Face Checkin System",
@@ -22,6 +23,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(checkin.router)
 app.include_router(users.router)
+app.include_router(photos.router)
 
 
 @app.on_event("startup")

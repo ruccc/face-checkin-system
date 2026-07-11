@@ -19,6 +19,7 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    user_name: str = ""
 
 
 class UserResponse(BaseModel):
@@ -41,6 +42,17 @@ class CheckinRecordResponse(BaseModel):
     checkin_time: datetime.datetime
     confidence: Optional[float] = None
     status: str
+
+    class Config:
+        from_attributes = True
+
+
+class UserPhotoResponse(BaseModel):
+    id: int
+    user_id: int
+    photo_path: str
+    has_face_feature: str
+    created_at: datetime.datetime
 
     class Config:
         from_attributes = True

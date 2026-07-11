@@ -22,10 +22,23 @@ class ApiService {
     await prefs.setString('access_token', token);
   }
 
+  /// 保存用户名
+  Future<void> setUserName(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_name', name);
+  }
+
+  /// 获取用户名
+  Future<String?> getUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_name');
+  }
+
   /// 清除 JWT Token（注销时）
   Future<void> clearToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
+    await prefs.remove('user_name');
   }
 
   /// 构建带认证的 Header
@@ -147,6 +160,10 @@ class ApiService {
 
     // 保存 token
     await setToken(data['access_token'] as String);
+    // 保存用户名
+    if (data['user_name'] != null) {
+      await setUserName(data['user_name'] as String);
+    }
     return data;
   }
 
@@ -173,6 +190,82 @@ class ApiService {
     }
 
     return data;
+  }
+
+  // ==================== 照片库接口 ====================
+
+  /// 上传照片到个人照片库
+  Future<Map<String, dynamic>> uploadPhoto({required XFile photo}) async {
+    final response = await multipartPost(
+      '/photos',
+      {},
+      photo,
+      'photo',
+      auth: true,
+    );
+
+    final body = await response.stream.bytesToString();
+    final data = jsonDecode(body) as Map<String, dynamic>;
+
+    if (response.statusCode != 200) {
+      throw ApiException(data['detail'] ?? 'Upload failed');
+    }
+
+    return data;
+  }
+
+  /// 获取照片列表
+  Future<List<Map<String, dynamic>>> listPhotos() async {
+    final response = await get('/photos', auth: true);
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw ApiException(data['detail'] ?? 'Failed to load photos');
+    }
+
+    final list = jsonDecode(response.body) as List;
+    return list.cast<Map<String, dynamic>>();
+  }
+
+  /// 删除照片
+  Future<Map<String, dynamic>> deletePhoto(int photoId) async {
+    final headers = await _headers(auth: true);
+    final url = Uri.parse(ApiConfig.apiUrl('/photos/$photoId'));
+    final response = await http.delete(url, headers: headers);
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode != 200) {
+      throw ApiException(data['detail'] ?? 'Delete failed');
+    }
+
+    return data;
+  }
+
+  /// 获取照片预览 URL
+  String photoFileUrl(int photoId) {
+    return '${ApiConfig.baseUrl}${ApiConfig.apiPrefix}/photos/$photoId/file';
+  }
+
+  // ==================== 签到记录接口 ====================
+
+  /// 获取当前用户的签到记录
+  Future<List<Map<String, dynamic>>> getCheckinRecords({
+    int skip = 0,
+    int limit = 100,
+  }) async {
+    final response = await get(
+      '/checkin/records?skip=$skip&limit=$limit',
+      auth: true,
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw ApiException(data['detail'] ?? 'Failed to load records');
+    }
+
+    final list = jsonDecode(response.body) as List;
+    return list.cast<Map<String, dynamic>>();
   }
 
   // ==================== 注销接口 ====================
