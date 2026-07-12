@@ -51,3 +51,32 @@ logs/
 htmlcov/
 .coverage
 .coverage.*
+
+# ==================== Flutter / Dart ====================
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+*.dart.js
+*.info.json
+*.js_
+*.js.deps
+*.js.map
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# ==================== Android / Gradle ====================
+.gradle/
+local.properties
+*.apk
+*.aab
+*.keystore
+!gradle/wrapper/gradle-wrapper.jar
+
+# ==================== VS Code ====================
+.vscode/

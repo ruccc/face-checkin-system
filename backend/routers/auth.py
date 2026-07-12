@@ -1,5 +1,7 @@
 import os
 import uuid
+import logging
+import traceback
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from sqlalchemy.orm import Session
 from database import get_db
@@ -7,6 +9,7 @@ from models import User, FaceFeature, Photo
 from schemas import RegisterRequest, LoginRequest, TokenResponse, MessageResponse
 from auth import hash_password, verify_password, create_access_token, get_current_user
 
+logger = logging.getLogger("auth")
 router = APIRouter(prefix="/api", tags=["认证"])
 
 UPLOAD_DIR = "uploads"
@@ -23,54 +26,65 @@ async def register(
     photo: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    if db.query(User).filter(User.username == username).first():
-        raise HTTPException(status_code=400, detail="Username already exists")
-    if db.query(User).filter(User.student_id == student_id).first():
-        raise HTTPException(status_code=400, detail="Student ID already exists")
+    logger.info(f"收到注册请求: username={username}, student_id={student_id}")
+    try:
+        if db.query(User).filter(User.username == username).first():
+            raise HTTPException(status_code=400, detail="Username already exists")
+        if db.query(User).filter(User.student_id == student_id).first():
+            raise HTTPException(status_code=400, detail="Student ID already exists")
 
-    # Save uploaded photo
-    ext = os.path.splitext(photo.filename or "photo.jpg")[1]
-    photo_filename = f"{uuid.uuid4().hex}{ext}"
-    photo_path = os.path.join(UPLOAD_DIR, photo_filename)
-    with open(photo_path, "wb") as f:
-        f.write(await photo.read())
+        # Save uploaded photo
+        ext = os.path.splitext(photo.filename or "photo.jpg")[1]
+        photo_filename = f"{uuid.uuid4().hex}{ext}"
+        photo_path = os.path.join(UPLOAD_DIR, photo_filename)
+        with open(photo_path, "wb") as f:
+            f.write(await photo.read())
+        logger.info(f"照片已保存: {photo_path}")
 
-    # 先进行人脸编码，失败则不创建用户
-    from services.face_service import encode_face
-    feature_bytes = encode_face(photo_path)
-    if not feature_bytes:
-        # 人脸编码失败，删除已上传的照片
-        if os.path.exists(photo_path):
-            os.remove(photo_path)
-        raise HTTPException(status_code=400, detail="Face encoding failed: no face detected or model error")
+        # 先进行人脸编码，失败则不创建用户
+        from services.face_service import encode_face
+        feature_bytes = encode_face(photo_path)
+        if not feature_bytes:
+            # 人脸编码失败，删除已上传的照片
+            if os.path.exists(photo_path):
+                os.remove(photo_path)
+            raise HTTPException(status_code=400, detail="Face encoding failed: no face detected or model error")
 
-    # 人脸编码成功后才创建用户
-    user = User(
-        username=username,
-        password_hash=hash_password(password),
-        name=name,
-        student_id=student_id,
-        email=email,
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+        # 人脸编码成功后才创建用户
+        user = User(
+            username=username,
+            password_hash=hash_password(password),
+            name=name,
+            student_id=student_id,
+            email=email,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
 
-    # 保存人脸特征
-    face_feature = FaceFeature(user_id=user.id, feature_vector=feature_bytes)
-    db.add(face_feature)
+        # 保存人脸特征
+        face_feature = FaceFeature(user_id=user.id, feature_vector=feature_bytes)
+        db.add(face_feature)
 
-    # 将注册照片存入统一照片库
-    register_photo = Photo(
-        user_id=user.id,
-        photo_path=photo_path,
-        photo_type="register",
-        has_face_feature="1",
-    )
-    db.add(register_photo)
-    db.commit()
+        # 将注册照片存入统一照片库
+        register_photo = Photo(
+            user_id=user.id,
+            photo_path=photo_path,
+            photo_type="register",
+            has_face_feature="1",
+        )
+        db.add(register_photo)
+        db.commit()
 
-    return {"message": "Registration successful"}
+        logger.info(f"用户注册成功: user_id={user.id}")
+        return {"message": "Registration successful"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"注册失败: {e}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"注册失败: {str(e)}")
 
 
 @router.post("/login", response_model=TokenResponse)
