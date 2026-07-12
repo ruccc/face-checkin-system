@@ -103,4 +103,4 @@ flutter run
 | Chrome (web) | 浏览器运行 |
 | Android | 需连接 Android 手机或模拟器 |
 
-> **注意**：如果提示平台不支持，先运行 `flutter create --platforms=windows,web .` 生成对应平台文件。前端默认连接远程服务器 `115.120.192.191:8000`，无需本地启动后端。
+> **注意**：如果提示平台不支持，先运行 `flutter create --platforms=windows,web .` 生成对应平台文件。前端默认连接远程服务器 `1.94.162.19:8000`，无需本地启动后端。
